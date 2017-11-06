@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:id="@+id/sv"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/delete"
+                android:onClick="delete"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="@dimen/len_5dp"
+                android:text="删除"/>
+
+            <TextView
+                android:id="@+id/edit"
+                android:onClick="edit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="@dimen/len_5dp"
+                android:text="编辑"/>
+
+            <TextView
+                android:id="@+id/exit_edit"
+                android:onClick="exitEdit"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="@dimen/len_5dp"
+                android:text="退出编辑"/>
+
+            <TextView
+                android:id="@+id/select_all"
+                android:onClick="selectAll"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="@dimen/len_5dp"
+                android:text="全选"/>
+
+            <TextView
+                android:id="@+id/select_none"
+                android:onClick="selectNone"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:padding="@dimen/len_5dp"
+                android:text="全不选"/>
+
+        </LinearLayout>
+
+        <com.wkp.editlistview_library.view.EditListView
+            android:id="@+id/lv"
+            app:wkp_checkedImg="@drawable/ic_checked"
+            app:wkp_uncheckedImg="@drawable/ic_uncheck"
+            app:wkp_measureHeight="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"></com.wkp.editlistview_library.view.EditListView>
+
+    </LinearLayout>
+</ScrollView>

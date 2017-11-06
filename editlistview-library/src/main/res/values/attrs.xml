@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="EditListView">
+        <!--是否开启测量高度-->
+        <attr name="wkp_measureHeight" format="boolean"/>
+        <!--未选中状态时图标-->
+        <attr name="wkp_uncheckedImg" format="reference"/>
+        <!--选中状态时图标-->
+        <attr name="wkp_checkedImg" format="reference"/>
+    </declare-styleable>
+</resources>
