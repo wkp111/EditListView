@@ -5,9 +5,9 @@
 ## Gradle集成
 ```groovy
 dependencies{
-      compile 'com.wkp:EditListView:1.0.1'
+      compile 'com.wkp:EditListView:1.0.2'
       //Android Studio3.0+可用以下方式
-      //implementation 'com.wkp:EditListView:1.0.1'
+      //implementation 'com.wkp:EditListView:1.0.2'
 }
 ```
 Note：可能存在Jcenter还在审核阶段，这时会集成失败！
@@ -20,10 +20,13 @@ Note：可能存在Jcenter还在审核阶段，这时会集成失败！
         <attr name="wkp_uncheckedImg" format="reference"/>
         <!--选中状态时图标-->
         <attr name="wkp_checkedImg" format="reference"/>
+        <!--编辑/退出编辑动画时长（默认200）-->
+        <attr name="wkp_editAnimDuration" format="integer"/>
 ```
 Note：每个属性都有对应的java设置代码！
 > 布局
 ```xml
+<!--activity_main.xml-->
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -104,13 +107,38 @@ Note：每个属性都有对应的java设置代码！
 
     </LinearLayout>
 </ScrollView>
+
+
+<!--item_lv.xml-->
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/item_tv"
+        android:padding="10dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:padding="10dp"
+        android:layout_alignParentRight="true"
+        android:text="新"
+        android:textColor="@android:color/white"
+        android:background="@android:color/holo_red_light"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</RelativeLayout>
 ```
-Note：ScrollView嵌套
+Note：ScrollView嵌套需要开启测量高度！
 > 代码示例
 ```java
 /**
  * kotlin用法
  */
+ @RequiresApi(Build.VERSION_CODES.KITKAT)
 class MainActivity : AppCompatActivity() {
 
     private val data = arrayListOf<String>("托儿索", "儿童劫", "小学僧", "橡皮妮", "喜之螂", "提款姬", "鱼尾雯", "鸡毛信", "娃娃鱼", "过家嘉", "尿不狮", "沙琪马", "阿童木", "大嘴猴", "香港皎")
@@ -179,11 +207,11 @@ class MainActivity : AppCompatActivity() {
  * Created by user on 2017/11/6.
  * java用法
  */
-
+@RequiresApi(api = Build.VERSION_CODES.KITKAT)
 public class TestActivity extends AppCompatActivity {
 
     private String[] mStrings = {"托儿索", "儿童劫", "小学僧", "橡皮妮", "喜之螂", "提款姬", "鱼尾雯", "鸡毛信", "娃娃鱼", "过家嘉", "尿不狮",
-            "沙琪马", "阿童木", "大嘴猴", "香港皎"};
+            "沙琪马", "阿童木", "大嘴猴", "香港皎","脑残片","卖卖卖","333","干干干"};
     private List<String> data = new ArrayList<>();
     private EditListView mListView;
     {
@@ -194,8 +222,10 @@ public class TestActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mListView = findViewById(R.id.lv);
+        //设置编辑/退出编辑动画时长
+        mListView.setAnimDuration(400);
         //设置适配器
-        mListView.setAdapter(new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,android.R.id.text1,data));
+        mListView.setAdapter(new ArrayAdapter<String>(this,R.layout.item_lv,R.id.item_tv,data));
         //条目长按监听
         mListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
             @Override
@@ -257,7 +287,10 @@ QQ邮箱：1535514884@qq.com<br/>
 Gmail邮箱：wkp15889686524@gmail.com<br/>
 
 ## 版本更新
-* v1.0.1
+* v1.0.2<br/>
+添加动画功能，可以设置编辑/退出编辑动画时长;<br/>
+优化刷新加载，加快多数据的notifyDataSetChanged<br/><br/>
+* v1.0.1<br/>
 新创建可编辑列表控件库
 ## License
 
