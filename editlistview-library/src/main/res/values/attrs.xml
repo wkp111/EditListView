@@ -7,5 +7,7 @@
         <attr name="wkp_uncheckedImg" format="reference"/>
         <!--选中状态时图标-->
         <attr name="wkp_checkedImg" format="reference"/>
+        <!--编辑/退出编辑动画时长（默认200）-->
+        <attr name="wkp_editAnimDuration" format="integer"/>
     </declare-styleable>
 </resources>

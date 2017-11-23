@@ -3,8 +3,12 @@ package com.wkp.editlistview_library.view;
 import android.content.Context;
 import android.content.res.TypedArray;
 import android.database.DataSetObserver;
+import android.os.Build;
 import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
+import android.transition.ChangeBounds;
+import android.transition.TransitionManager;
 import android.util.AttributeSet;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,10 +30,14 @@ import java.util.List;
 /**
  * Created by user on 2017/11/6.
  */
-
+@RequiresApi(api = Build.VERSION_CODES.KITKAT)
 public class EditListView extends ListView {
     private static final int DEFAULT_UNCHECKED_RES = R.drawable.ic_uncheck;     //默认未选中图标
     private static final int DEFAULT_CHECKED_RES = R.drawable.ic_checked;       //默认选中图标
+    private static final int FLAG_CHECK_SINGLE = 0;                             //单选标记
+    private static final int FLAG_CHECK_ALL_ON = 1;                             //全选标记
+    private static final int FLAG_CHECK_ALL_OFF = 2;                            //全不选标记
+    private static final long DEFAULT_ANIM_DURATION = 200;                      //默认动画时长
     /**
      * 编辑状态是否开启，默认关闭
      */
@@ -59,12 +67,22 @@ public class EditListView extends ListView {
      */
     private OnAllItemCheckedListener mListener;
 
+    /**
+     * 选条目时的标记
+     */
+    private int mFlagCheck = FLAG_CHECK_SINGLE;
+
+    /**
+     * 条目编辑/退出编辑动画时长
+     */
+    private long mAnimDuration = DEFAULT_ANIM_DURATION;
+
     public EditListView(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public EditListView(Context context, AttributeSet attrs) {
-        this(context, attrs,0);
+        this(context, attrs, 0);
     }
 
     public EditListView(Context context, AttributeSet attrs, int defStyleAttr) {
@@ -75,6 +93,7 @@ public class EditListView extends ListView {
 
     /**
      * 初始化属性参数
+     *
      * @param context
      * @param attrs
      */
@@ -84,6 +103,8 @@ public class EditListView extends ListView {
             mIsMeasureHeight = typedArray.getBoolean(R.styleable.EditListView_wkp_measureHeight, false);
             mUncheckedRes = typedArray.getResourceId(R.styleable.EditListView_wkp_uncheckedImg, DEFAULT_UNCHECKED_RES);
             mCheckedRes = typedArray.getResourceId(R.styleable.EditListView_wkp_checkedImg, DEFAULT_CHECKED_RES);
+            int duration = typedArray.getInteger(R.styleable.EditListView_wkp_editAnimDuration, (int) DEFAULT_ANIM_DURATION);
+            setAnimDuration(duration);
             typedArray.recycle();
         }
     }
@@ -96,7 +117,7 @@ public class EditListView extends ListView {
         setOnItemClickListener(new OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                setItemChecked(position,isItemChecked(position));
+                setItemChecked(position, isItemChecked(position));
             }
         });
     }
@@ -112,9 +133,12 @@ public class EditListView extends ListView {
             if (adapter != null) {
                 int totalHeight = 0;
                 for (int i = 0; i < adapter.getCount(); i++) {
-                    View view = adapter.getView(i, null, this);
-                    view.measure(0, 0);
-                    totalHeight += view.getMeasuredHeight();
+                    View llView = adapter.getView(i, null, this);
+                    View userView = mBaseAdapter.mAdapter.getView(i, null, this);
+                    llView.measure(0, 0);
+                    userView.measure(0, 0);
+                    int height = llView.getMeasuredHeight() > userView.getMeasuredHeight() ? llView.getMeasuredHeight() : userView.getMeasuredHeight();
+                    totalHeight += height;
                 }
                 params.height = totalHeight + getDividerHeight() * (adapter.getCount() - 1);
             }
@@ -131,14 +155,26 @@ public class EditListView extends ListView {
             return;
         }
         if (parent instanceof ScrollView) {
-            ((ScrollView) parent).smoothScrollTo(0,0);
-        }else {
+            ((ScrollView) parent).smoothScrollTo(0, 0);
+        } else {
             smoothScrollToHeader(parent);
         }
     }
 
     /**
+     * 设置动画时长
+     *
+     * @param duration
+     */
+    private void setTransition(long duration) {
+        ChangeBounds changeBounds = new ChangeBounds();
+        changeBounds.setDuration(duration);
+        TransitionManager.beginDelayedTransition(this, changeBounds);
+    }
+
+    /**
      * 设置条目选中状态
+     *
      * @param position
      * @param value
      */
@@ -147,7 +183,14 @@ public class EditListView extends ListView {
         boolean isChange = isItemChecked(position) != value;
         super.setItemChecked(position, value);
         if (mBaseAdapter != null) {
-            mBaseAdapter.notifyDataSetChanged();
+            if (mFlagCheck == FLAG_CHECK_SINGLE) {
+                mBaseAdapter.notifyDataSetChanged();
+            }else {
+                if (position == mBaseAdapter.getCount() - 1) {
+                    mBaseAdapter.notifyDataSetChanged();
+                    mFlagCheck = FLAG_CHECK_SINGLE;
+                }
+            }
             if (mListener != null && isChange) {
                 mListener.onAllItemChecked(mBaseAdapter.getCount() == getCheckedItemCount());
             }
@@ -156,6 +199,7 @@ public class EditListView extends ListView {
 
     /**
      * 是否所有条目已选中
+     *
      * @return
      */
     public boolean isAllItemChecked() {
@@ -167,6 +211,7 @@ public class EditListView extends ListView {
 
     /**
      * 是否所有条目未选中
+     *
      * @return
      */
     public boolean isAllItemUnchecked() {
@@ -175,6 +220,7 @@ public class EditListView extends ListView {
 
     /**
      * 是否正在编辑
+     *
      * @return
      */
     public boolean isEditState() {
@@ -183,6 +229,7 @@ public class EditListView extends ListView {
 
     /**
      * 是否开启测量高度（解决ScrollView嵌套）
+     *
      * @param measureHeight 是否开启
      * @return 链式编程
      */
@@ -193,7 +240,18 @@ public class EditListView extends ListView {
     }
 
     /**
+     * 设置编辑/退出编辑动画时长（最小0，最大500）
+     * @param duration
+     * @return
+     */
+    public EditListView setAnimDuration(long duration) {
+        mAnimDuration = duration < 0 ? 0 : (duration > 500 ? 500 : duration);
+        return this;
+    }
+
+    /**
      * 设置编辑状态
+     *
      * @param editState 是否开启编辑
      * @return 链式编程
      */
@@ -206,18 +264,21 @@ public class EditListView extends ListView {
         if (mBaseAdapter != null) {
             mBaseAdapter.notifyDataSetChanged();
         }
+        setTransition(mAnimDuration);
         return this;
     }
 
     /**
      * 设置所有条目为已选中
+     *
      * @return
      */
     public EditListView setAllItemChecked() {
+        mFlagCheck = FLAG_CHECK_ALL_ON;
         if (mBaseAdapter != null) {
             for (int i = 0; i < mBaseAdapter.getCount(); i++) {
                 if (!isItemChecked(i)) {
-                    setItemChecked(i,true);
+                    setItemChecked(i, true);
                 }
             }
         }
@@ -226,13 +287,15 @@ public class EditListView extends ListView {
 
     /**
      * 设置所有条目为未选中
+     *
      * @return
      */
     public EditListView setAllItemUnchecked() {
+        mFlagCheck = FLAG_CHECK_ALL_OFF;
         if (mBaseAdapter != null) {
             for (int i = 0; i < mBaseAdapter.getCount(); i++) {
                 if (isItemChecked(i)) {
-                    setItemChecked(i,false);
+                    setItemChecked(i, false);
                 }
             }
         }
@@ -241,6 +304,7 @@ public class EditListView extends ListView {
 
     /**
      * 设置未选中状态图标
+     *
      * @param uncheckedRes 资源图片
      * @return 链式编程
      */
@@ -254,6 +318,7 @@ public class EditListView extends ListView {
 
     /**
      * 设置已选中状态图标
+     *
      * @param checkedRes 资源图片
      * @return 链式编程
      */
@@ -267,6 +332,7 @@ public class EditListView extends ListView {
 
     /**
      * 设置所有条目选中监听
+     *
      * @param listener
      * @return
      */
@@ -277,6 +343,7 @@ public class EditListView extends ListView {
 
     /**
      * 删除所有已选中条目
+     *
      * @param adapterData 适配器原始数据(注意：不能由数组转换而来，转换的不具备删除功能)
      * @param <T>
      * @return
@@ -285,7 +352,7 @@ public class EditListView extends ListView {
         for (int i = adapterData.size() - 1; i >= 0; i--) {
             if (isItemChecked(i)) {
                 adapterData.remove(i);
-                setItemChecked(i,false);
+                setItemChecked(i, false);
             }
         }
         if (mBaseAdapter != null) {
@@ -296,6 +363,7 @@ public class EditListView extends ListView {
 
     /**
      * 设置适配器
+     *
      * @param adapter
      */
     @Override
@@ -316,7 +384,7 @@ public class EditListView extends ListView {
     /**
      * 内置适配器
      */
-    class EditBaseAdapter extends BaseAdapter{
+    class EditBaseAdapter extends BaseAdapter {
         private BaseAdapter mAdapter;
 
         public EditBaseAdapter(@NonNull BaseAdapter adapter) {
@@ -345,6 +413,7 @@ public class EditListView extends ListView {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View view = mAdapter.getView(position, convertView == null ? null : ((LinearLayout) convertView).getChildAt(1), parent);
+            view.measure(0, 0);
             ViewHolder holder = ViewHolder.newInstance(parent.getContext(), convertView, R.layout.item_lv_lib);
             LinearLayout linearLayout = holder.getView(R.id.ll_item_lib, LinearLayout.class);
             if (linearLayout.indexOfChild(view) != -1) {
@@ -352,9 +421,14 @@ public class EditListView extends ListView {
             }
             linearLayout.addView(view);
             ImageView imageView = holder.getView(R.id.iv_item_lib, ImageView.class);
+            imageView.measure(0, 0);
             imageView.setVisibility(mEditState ? VISIBLE : GONE);
+            int width = mEditState ? 0 : imageView.getMeasuredWidth();
+            imageView.layout(-width, 0, imageView.getMeasuredHeight(), imageView.getMeasuredWidth() - width);
             imageView.setBackgroundResource(mUncheckedRes);
             imageView.setImageResource(isItemChecked(position) ? mCheckedRes : 0);
+            int llHeight = view.getMeasuredHeight() > imageView.getMeasuredHeight() ? view.getMeasuredHeight() : imageView.getMeasuredHeight();
+            linearLayout.setLayoutParams(new LayoutParams(LayoutParams.MATCH_PARENT, llHeight));
             return holder.mConvertView;
         }
 
@@ -375,15 +449,15 @@ public class EditListView extends ListView {
 
         @Override
         public void notifyDataSetChanged() {
-            super.notifyDataSetChanged();
             mAdapter.notifyDataSetChanged();
+            super.notifyDataSetChanged();
             setListViewHeight();
         }
 
         @Override
         public void notifyDataSetInvalidated() {
-            super.notifyDataSetInvalidated();
             mAdapter.notifyDataSetInvalidated();
+            super.notifyDataSetInvalidated();
         }
 
         @Override
@@ -398,7 +472,7 @@ public class EditListView extends ListView {
 
         @Override
         public View getDropDownView(int position, View convertView, ViewGroup parent) {
-            return mAdapter.getDropDownView(position,convertView,parent);
+            return mAdapter.getDropDownView(position, convertView, parent);
         }
 
         @Override
@@ -420,7 +494,7 @@ public class EditListView extends ListView {
     /**
      * 所有条目选中/未选中监听
      */
-    public interface OnAllItemCheckedListener{
+    public interface OnAllItemCheckedListener {
         void onAllItemChecked(boolean checked);
     }
 }

@@ -1,6 +1,8 @@
 package com.wkp.editlistview
 
+import android.os.Build
 import android.os.Bundle
+import android.support.annotation.RequiresApi
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.View
@@ -10,6 +12,7 @@ import com.wkp.editlistview_library.view.EditListView
 /**
  * kotlin用法
  */
+@RequiresApi(Build.VERSION_CODES.KITKAT)
 class MainActivity : AppCompatActivity() {
 
     private val data = arrayListOf<String>("托儿索", "儿童劫", "小学僧", "橡皮妮", "喜之螂", "提款姬", "鱼尾雯", "鸡毛信", "娃娃鱼", "过家嘉", "尿不狮", "沙琪马", "阿童木", "大嘴猴", "香港皎")
